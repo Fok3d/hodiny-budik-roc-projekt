@@ -1,105 +1,83 @@
-#include <LiquidCrystal_I2C.h> 
-#include <Wire.h> 
-#include <DS3231.h> 
-
-LiquidCrystal_I2C lcd(0x27, 16, 2); 
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <RTClib.h> 
 
 
-DS3231 rtc; 
-bool century = false; 
-bool h12; 
-bool PM;  
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-//priprava
-const int buzzerPin = 8;
-const int modeButtonPin = 9;
-const int setButtonPin = 10;
-const int alarmButtonPin = 7;
+
+RTC_DS3231 rtc; 
 
 unsigned long previousConsoleMillis = 0;
-const long consoleInterval = 1000; 
+const long consoleInterval = 1000;
 
 void setup() {
+  Serial.begin(9600);
   
-  Serial.begin(9600); 
-  Serial.println("Arduino Hodiny s RTC - Start");
-  
-  Wire.begin();
-  
-  
-  rtc.setHour(14); 
-  rtc.setMinute(55); 
-  rtc.setSecond(0);  
-  rtc.setDate(7); 
-  rtc.setMonth(12); 
-  rtc.setYear(25); 
-  
-
-  lcd.init(); 
-  lcd.backlight(); 
-  
-  lcd.print("Hodiny DS3231");
+  lcd.init();
+  lcd.backlight();
+  lcd.print("Dobry den :)");
   lcd.setCursor(0, 1);
   lcd.print("Startuji...");
   delay(2000);
-  lcd.clear(); 
+  lcd.clear();
+
+  if (!rtc.begin()) {
+    Serial.println("RTC nenalezeno! Zkontrolujte zapojeni.");
+    lcd.print("Chyba RTC!");
+    while (1);
+  }
+
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC ztratilo napajeni, nastavuji cas!");
+    
+    
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 }
 
 void loop() {
-  
-  
-  int hours = rtc.getHour(h12, PM);
-  int minutes = rtc.getMinute(); 
-  int seconds = rtc.getSecond(); 
-  
-  int day = rtc.getDate();
-  int month = rtc.getMonth(century);
-  int year = rtc.getYear();
-  
-  // DD.MM:RR
+  DateTime now = rtc.now();
+
+
   lcd.setCursor(0, 0);
-  if (day < 10) lcd.print('0');
-  lcd.print(day);
+  if (now.day() < 10) lcd.print('0');
+  lcd.print(now.day());
   lcd.print('.');
-  if (month < 10) lcd.print('0');
-  lcd.print(month);
+  if (now.month() < 10) lcd.print('0');
+  lcd.print(now.month());
   lcd.print('.');
-  if (year < 10) lcd.print('0');
-  lcd.print(year); 
-  lcd.print("    "); 
-  
+  lcd.print(now.year());
 
   lcd.setCursor(0, 1);
   lcd.print("Cas: ");
   
-  lcd.setCursor(5, 1); 
-  if (hours < 10) lcd.print('0');
-  lcd.print(hours);
+  if (now.hour() < 10) lcd.print('0');
+  lcd.print(now.hour());
   lcd.print(':');
   
-  if (minutes < 10) lcd.print('0');
-  lcd.print(minutes);
+  if (now.minute() < 10) lcd.print('0');
+  lcd.print(now.minute());
   lcd.print(':');
   
-  if (seconds < 10) lcd.print('0');
-  lcd.print(seconds);
-  lcd.print("   "); 
+  if (now.second() < 10) lcd.print('0');
+  lcd.print(now.second());
 
-  
+
   unsigned long currentMillis = millis();
   if (currentMillis - previousConsoleMillis >= consoleInterval) {
     previousConsoleMillis = currentMillis;
 
-    Serial.print("Aktualny cas: ");
-    
-    if (day < 10) Serial.print('0'); Serial.print(day); Serial.print('.');
-    if (month < 10) Serial.print('0'); Serial.print(month); Serial.print('.');
-    Serial.print(year + 2000);
+    Serial.print("Aktualni cas: ");
+    if (now.day() < 10) Serial.print('0'); Serial.print(now.day()); Serial.print('.');
+    if (now.month() < 10) Serial.print('0'); Serial.print(now.month()); Serial.print('.');
+    Serial.print(now.year());
     Serial.print(" ");
     
-    if (hours < 10) Serial.print('0'); Serial.print(hours); Serial.print(':');
-    if (minutes < 10) Serial.print('0'); Serial.print(minutes); Serial.print(':');
-    if (seconds < 10) Serial.print('0'); Serial.println(seconds);
+    if (now.hour() < 10) Serial.print('0'); Serial.print(now.hour()); Serial.print(':');
+    if (now.minute() < 10) Serial.print('0'); Serial.print(now.minute()); Serial.print(':');
+    if (now.second() < 10) Serial.print('0'); Serial.println(now.second());
   }
 
   delay(50); 
