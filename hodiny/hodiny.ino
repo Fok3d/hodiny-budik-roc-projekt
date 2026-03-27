@@ -262,7 +262,7 @@ void loop() {
   }
 }
 
-//funkce skibidi
+
 
 void displayMainScreen() {
   DateTime now = rtc.now();
