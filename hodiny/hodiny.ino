@@ -95,7 +95,7 @@ void loop() {
     lastBtnPress = millis();
   }
 
-  if (btnOk && btnBack && btnUp && btnDown && currentState == SHOW_TIME) {
+  if (btnOk && btnBack && currentState == SHOW_TIME) {
     lcd.clear(); lcd.print("MASTER RESET"); delay(1000); lcd.clear();
     DateTime now = rtc.now();
     tempYear = now.year(); tempMonth = now.month(); tempDay = now.day();
