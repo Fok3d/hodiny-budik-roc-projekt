@@ -48,6 +48,34 @@ const char daysChar[] = {'P', 'U', 'S', 'C', 'P', 'S', 'N'};
 
 int tempYear, tempMonth, tempDay, tempHour, tempMinute;
 
+int getDaysInMonth(int month, int year) {
+
+  switch(month) {
+
+    case 1:  return 31;
+
+    case 2:
+      if ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
+        return 29;
+      else
+        return 28;
+
+    case 3:  return 31;
+    case 4:  return 30;
+    case 5:  return 31;
+    case 6:  return 30;
+    case 7:  return 31;
+    case 8:  return 31;
+    case 9:  return 30;
+    case 10: return 31;
+    case 11: return 30;
+    case 12: return 31;
+  }
+
+  return 31;
+}
+
+
 void setup() {
   Serial.begin(9600);
   
@@ -127,22 +155,39 @@ void loop() {
         }
 
         //pokud dcf do 3 minu(could be less)nebo zmacknejs back nastavujes manual
-        if (elapsed > 180 || btnBack) {
-          lcd.clear();
+      if (elapsed > 180 || btnBack) {
+
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("DCF Nenalezen!");
+        delay(1500);
+        lcd.clear();
+
+        DateTime now = rtc.now();
+
+        
+        if (now.year() < 2000) {
+
+          
+          rtc.adjust(DateTime(2000, 1, 1, 0, 0, 0));
+
           lcd.setCursor(0, 0);
-          lcd.print("DCF Nenalezeno!");
+          lcd.print("RTC Nastaveno");
+          lcd.setCursor(0, 1);
+          lcd.print("01.01.2000");
           delay(2000);
           lcd.clear();
-          
-          DateTime now = rtc.now();
-          tempYear = now.year(); 
-          tempMonth = now.month(); 
-          tempDay = now.day();
-          tempHour = now.hour(); 
-          tempMinute = now.minute();
-          
-          currentState = SET_YEAR; 
         }
+        else {
+
+          lcd.setCursor(0, 0);
+          lcd.print("Pouzivam RTC");
+          delay(1500);
+          lcd.clear();
+        }
+
+        currentState = SHOW_TIME;
+      }
       }
       break;
 
@@ -207,11 +252,33 @@ void loop() {
       break;
 
     case SET_DAY:
-      displayConfigVal("Nastav Den:", tempDay);
-      if (btnUp) { tempDay++; if(tempDay > 31) tempDay = 1; } 
-      if (btnDown) { tempDay--; if(tempDay < 1) tempDay = 31; }
-      if (btnOk) { currentState = SET_TIME_HOUR; lcd.clear(); }
-      if (btnBack) currentState = SET_MONTH;
+      {
+        int maxDays = getDaysInMonth(tempMonth, tempYear);
+
+        displayConfigVal("Nastav Den:", tempDay);
+
+        if (btnUp) {
+          tempDay++;
+
+          if (tempDay > maxDays)
+            tempDay = 1;
+        }
+
+        if (btnDown) {
+          tempDay--;
+
+          if (tempDay < 1)
+            tempDay = maxDays;
+        }
+
+        if (btnOk) {
+          currentState = SET_TIME_HOUR;
+          lcd.clear();
+        }
+
+        if (btnBack)
+          currentState = SET_MONTH;
+      }
       break;
 
     case SET_TIME_HOUR:
